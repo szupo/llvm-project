@@ -1,0 +1,15 @@
+cmake \
+    -DCLANG_ENABLE_BOOTSTRAP=On \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_INSTALL_PREFIX=/usr/local/clang+llvm-9.01 \
+    -DCMAKE_CXX_FLAGS='-w' \
+    -DLLVM_CCACHE_BUILD=On \
+    -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld" \
+    -DLLVM_ENABLE_RTTI=On \
+    -DLLVM_INCLUDE_BENCHMARKS=Off \
+    -DLLVM_INCLUDE_TESTS=Off \
+    -DLLVM_TARGETS_TO_BUILD=X86 \
+    -DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=On \
+    -DLLVM_OPTIMIZED_TABLEGEN=On \
+    -DLLVM_CCACHE_BUILD=On \
+    -G Ninja ../llvm

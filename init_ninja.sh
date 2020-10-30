@@ -2,7 +2,7 @@ cmake \
     -DCLANG_ENABLE_BOOTSTRAP=On \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX=/usr/local/clang+llvm-9.01 \
-    -DCMAKE_CXX_FLAGS='-w' \
+    -DCMAKE_CXX_FLAGS='-w -fno-lto' \
     -DLLVM_CCACHE_BUILD=On \
     -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld" \
     -DLLVM_ENABLE_RTTI=On \

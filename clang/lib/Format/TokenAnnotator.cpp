@@ -22,7 +22,8 @@
 #define DEBUG_TYPE "format-token-annotator"
 
 namespace memsql {
-bool mustBreakBefore(const clang::format::AnnotatedLine &Line,
+bool mustBreakBefore(const clang::format::FormatStyle &Style,
+                     const clang::format::AnnotatedLine &Line,
                      const clang::format::FormatToken &Right);
 }
 
@@ -3164,14 +3165,13 @@ bool TokenAnnotator::mustBreakBefore(const AnnotatedLine &Line,
                                      const FormatToken &Right) {
   const FormatToken &Left = *Right.Previous;
 
-  // llvm::setCurrentDebugType("memsql");
   DEBUG_WITH_TYPE("memsql", printDebugToken(&Right));
 
   if (Style.Language == FormatStyle::LK_Cpp) {
     if (Right.is(TT_CtorInitializerComma)) {
       return false;
     }
-    if (memsql::mustBreakBefore(Line, Right)) {
+    if (memsql::mustBreakBefore(Style, Line, Right)) {
       return true;
     }
   }

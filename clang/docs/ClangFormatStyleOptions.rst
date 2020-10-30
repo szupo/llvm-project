@@ -2561,3 +2561,11 @@ The result is:
           r();
       }
   }
+
+**AlignMemberAccess** (``std::vector<std::string>``)
+  A vector of Member Functions that should be aligned with its object caller
+
+  For example: ['Falut', 'Else']
+
+**BreakBraceInitializer** (``bool``)
+  If ``true``, element inside brace intializer will be placed one per line.

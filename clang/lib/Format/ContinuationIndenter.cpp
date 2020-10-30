@@ -923,6 +923,16 @@ unsigned ContinuationIndenter::getNewLineColumn(const LineState &State) {
   unsigned ContinuationIndent =
       std::max(State.Stack.back().LastSpace, State.Stack.back().Indent) +
       Style.ContinuationIndentWidth;
+  if (Style.Language == FormatStyle::LK_Cpp &&
+      Current.isMemberAccess() && Current.isNot(TT_ImplicitStringLiteral)) {
+      std::string token(Current.Next->TokenText.data(), Current.Next->ColumnWidth);
+      if (find(Style.AlignMemberAccess.begin(),
+           Style.AlignMemberAccess.end(),
+           token) != Style.AlignMemberAccess.end()) {
+        //Unindent.
+        ContinuationIndent -= Style.ContinuationIndentWidth;
+      }
+  }
   const FormatToken *PreviousNonComment = Current.getPreviousNonComment();
   const FormatToken *NextNonComment = Previous.getNextNonComment();
   if (!NextNonComment)

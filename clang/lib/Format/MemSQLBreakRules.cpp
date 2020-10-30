@@ -9,7 +9,9 @@ namespace memsql {
 using namespace clang;
 using namespace clang::format;
 
-bool mustBreakBefore(const AnnotatedLine &Line, const FormatToken &Right) {
+bool mustBreakBefore(const FormatStyle &Style,
+                     const AnnotatedLine &Line,
+                     const FormatToken &Right) {
   FormatToken *Left = Right.Previous;
 
   if (Left->is(clang::format::TT_CtorInitializerColon)) {
@@ -67,7 +69,8 @@ bool mustBreakBefore(const AnnotatedLine &Line, const FormatToken &Right) {
     // https://en.cppreference.com/w/cpp/language/aggregate_initialization
     // T object = {arg1, arg2, ...};	(1)
     // T object {arg1, arg2, ... };	(2)	(since C++11)
-    if (Right.BlockKind != BK_Block) { // Either BK_Unknown or BK_BracedInit
+    if (Style.BreakBraceInitializer && Right.BlockKind != BK_Block) {
+      // For either BK_Unknown or BK_BracedInit
       if (Right.ParameterCount > 2) {
         Right.Next->MustBreakBefore = true;
         for (FormatToken *Search = Right.Next;

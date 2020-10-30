@@ -553,6 +553,9 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("TypenameMacros", Style.TypenameMacros);
     IO.mapOptional("UseCRLF", Style.UseCRLF);
     IO.mapOptional("UseTab", Style.UseTab);
+
+    IO.mapOptional("AlignMemberAccess", Style.AlignMemberAccess);
+    IO.mapOptional("BreakBraceInitializer", Style.BreakBraceInitializer);
   }
 };
 

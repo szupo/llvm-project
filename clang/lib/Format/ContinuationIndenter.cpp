@@ -329,6 +329,15 @@ bool ContinuationIndenter::canBreak(const LineState &State) {
 bool ContinuationIndenter::mustBreak(const LineState &State) {
   const FormatToken &Current = *State.NextToken;
   const FormatToken &Previous = *Current.Previous;
+
+  if (Current.is(tok::l_paren) &&
+      Previous.is(TT_FunctionDeclarationName)){
+    FormatToken *R_Paren = Current.MatchingParen;
+    if (R_Paren) {
+      R_Paren->MustBreakBefore = false;
+    }
+  }
+
   if (Current.MustBreakBefore || Current.is(TT_InlineASMColon))
     return true;
   if (State.Stack.back().BreakBeforeClosingBrace &&

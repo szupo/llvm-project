@@ -94,7 +94,7 @@ bool mustBreakBefore(const FormatStyle &Style,
       Line.MightBeFunctionDecl) {
     FormatToken *FuncName = nullptr;
     for (FuncName = Left; FuncName; FuncName = FuncName->Previous) {
-      if (FuncName && FuncName->Type == TT_FunctionDeclarationName) {
+      if (FuncName && FuncName->is(TT_FunctionDeclarationName)) {
         FuncName->MustBreakBefore = false;
         for (FormatToken *Search = Left;
              Search && Search != Left->MatchingParen; Search = Search->Next) {

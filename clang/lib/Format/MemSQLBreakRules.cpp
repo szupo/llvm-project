@@ -9,6 +9,36 @@ namespace memsql {
 using namespace clang;
 using namespace clang::format;
 
+static unsigned int CountLogicAndOr(const FormatToken* Left,
+                                    const FormatToken* Right) {
+    unsigned int count = 0;
+    for (const FormatToken* Token = Left;
+         Token != Right;
+         Token = Token->Next) {
+        if (Token->TokenText.equals("&&") ||
+            Token->TokenText.equals("||")) {
+          count ++;
+        }
+    }
+    return count;
+}
+
+static bool IsConditionCheck(const std::string& token,
+                             const std::vector<std::string>& Candidates) {
+  if(token.compare("if") == 0 ||
+     token.compare("for") == 0 ||
+     token.compare("while") == 0 ||
+     token.compare("assert") == 0 ) {
+      return true;
+  }
+
+  if (find(Candidates.begin(), Candidates.end(), token) != Candidates.end()) {
+      return true;
+  }
+
+  return false;
+}
+
 bool mustBreakBefore(const FormatStyle &Style,
                      const AnnotatedLine &Line,
                      const FormatToken &Right) {
@@ -107,6 +137,28 @@ bool mustBreakBefore(const FormatStyle &Style,
           return true;
         }
         break;
+      }
+    }
+  }
+
+  // Always line break in compound condition ("&&" and "||")
+  if (Right.is(tok::r_paren)) {
+    const FormatToken* L_Paren = Right.MatchingParen;
+    assert(L_Paren);
+    if (L_Paren->Previous) {
+      const FormatToken* FuncName = L_Paren->Previous;
+      std::string token(FuncName->TokenText.data(), FuncName->ColumnWidth);
+      if (IsConditionCheck(token, Style.CustomizeConditionCheckFunctions)) {
+        unsigned int c = CountLogicAndOr(L_Paren, &Right);
+        if (c > 1) {
+          for (const FormatToken* Token = L_Paren; Token != &Right; Token = Token->Next) {
+            if (Token->TokenText.equals("&&") ||
+                Token->TokenText.equals("||")) {
+              Token->Next->MustBreakBefore = true;
+              Token->Previous->Next->SpacesRequiredBefore = 1;
+            }
+          }
+        }
       }
     }
   }

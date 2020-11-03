@@ -556,6 +556,7 @@ template <> struct MappingTraits<FormatStyle> {
 
     IO.mapOptional("AlignMemberAccess", Style.AlignMemberAccess);
     IO.mapOptional("BreakBraceInitializer", Style.BreakBraceInitializer);
+    IO.mapOptional("CustomizeConditionCheckFunctions", Style.CustomizeConditionCheckFunctions);
   }
 };
 

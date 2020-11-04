@@ -3171,6 +3171,9 @@ bool TokenAnnotator::mustBreakBefore(const AnnotatedLine &Line,
     if (Right.is(TT_CtorInitializerComma)) {
       return false;
     }
+    if(Right.is(tok::comma) && Left.is(TT_BlockComment)) {
+      return false;
+    }
     if (memsql::mustBreakBefore(Style, Line, Right)) {
       return true;
     }

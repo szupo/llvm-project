@@ -330,10 +330,12 @@ bool ContinuationIndenter::mustBreak(const LineState &State) {
   const FormatToken &Current = *State.NextToken;
   const FormatToken &Previous = *Current.Previous;
 
+  DEBUG_WITH_TYPE("memsql2", Current.printDebugToken());
+
   if (Current.is(tok::l_paren) &&
       Previous.is(TT_FunctionDeclarationName)){
     FormatToken *R_Paren = Current.MatchingParen;
-    if (R_Paren) {
+    if (R_Paren && R_Paren->Previous->isNot(TT_LineComment)) {
       R_Paren->MustBreakBefore = false;
     }
   }

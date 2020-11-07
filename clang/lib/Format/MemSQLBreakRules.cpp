@@ -85,6 +85,16 @@ bool mustBreakBefore(const FormatStyle &Style,
     return true;
   }
 
+  if (Right.is(tok::comma) && Left->Previous &&
+      (Left->Previous->TokenText.equals("if") ||
+       Left->Previous->TokenText.equals("elif") ||
+       Left->Previous->TokenText.equals("else") ||
+       Left->Previous->TokenText.equals("endif") ||
+       Left->Previous->TokenText.equals("ifdef") ||
+       Left->Previous->TokenText.equals("ifndef"))) {
+    return true;
+  }
+
   if (Right.is(tok::kw_while) && Left->is(tok::r_brace)) {
     return true;
   }

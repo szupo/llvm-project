@@ -3141,31 +3141,11 @@ static bool isAllmanBrace(const FormatToken &Tok) {
          !Tok.isOneOf(TT_ObjCBlockLBrace, TT_LambdaLBrace, TT_DictLiteral);
 }
 
-static void printDebugToken(const FormatToken *Tok) {
-  llvm::errs() << " M=" << Tok->MustBreakBefore << " C=" << Tok->CanBreakBefore
-               << " T=" << getTokenTypeName(Tok->Type)
-               << " S=" << Tok->SpacesRequiredBefore
-               << " B=" << Tok->BlockParameterCount << " BK=" << Tok->BlockKind
-               << " P=" << Tok->SplitPenalty
-               << " Params=" << Tok->ParameterCount
-               << " NL=" << Tok->NewlinesBefore
-               << " Offset=" << Tok->ColumnWidth
-               << " LastNewlineOffset=" << Tok->LastNewlineOffset
-               << " LastLineColumnWidth=" << Tok->LastLineColumnWidth
-               << " Name=" << Tok->Tok.getName() << " L=" << Tok->TotalLength
-               << " PPK=" << Tok->PackingKind << " FakeLParens=";
-  for (unsigned i = 0, e = Tok->FakeLParens.size(); i != e; ++i)
-    llvm::errs() << Tok->FakeLParens[i] << "/";
-  llvm::errs() << " FakeRParens=" << Tok->FakeRParens;
-  llvm::errs() << " II=" << Tok->Tok.getIdentifierInfo();
-  llvm::errs() << " Text='" << Tok->TokenText << "'\n";
-}
-
 bool TokenAnnotator::mustBreakBefore(const AnnotatedLine &Line,
                                      const FormatToken &Right) {
   const FormatToken &Left = *Right.Previous;
 
-  DEBUG_WITH_TYPE("memsql", printDebugToken(&Right));
+  DEBUG_WITH_TYPE("memsql1", Right.printDebugToken());
 
   if (Style.Language == FormatStyle::LK_Cpp) {
     if (Right.is(TT_CtorInitializerComma)) {
@@ -3724,7 +3704,7 @@ void TokenAnnotator::printDebugInfo(const AnnotatedLine &Line) {
   llvm::errs() << "AnnotatedTokens(L=" << Line.Level << "):\n";
   const FormatToken *Tok = Line.First;
   while (Tok) {
-    printDebugToken(Tok);
+    Tok->printDebugToken();
     if (!Tok->Next)
       assert(Tok == Line.Last);
     Tok = Tok->Next;

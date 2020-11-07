@@ -549,6 +549,8 @@ struct FormatToken {
                : nullptr;
   }
 
+  void printDebugToken() const;
+
 private:
   // Disallow copying.
   FormatToken(const FormatToken &) = delete;

@@ -302,5 +302,25 @@ CommaSeparatedList::getColumnFormat(unsigned RemainingCharacters) const {
   return BestFormat;
 }
 
+void FormatToken::printDebugToken() const {
+  llvm::errs() << " M=" << MustBreakBefore << " C=" << CanBreakBefore
+               << " T=" << getTokenTypeName(this->Type)
+               << " S=" << SpacesRequiredBefore
+               << " B=" << BlockParameterCount << " BK=" << BlockKind
+               << " P=" << SplitPenalty
+               << " Params=" << ParameterCount
+               << " NL=" << NewlinesBefore
+               << " Offset=" << ColumnWidth
+               << " LastNewlineOffset=" << LastNewlineOffset
+               << " LastLineColumnWidth=" << LastLineColumnWidth
+               << " Name=" << Tok.getName() << " L=" << TotalLength
+               << " PPK=" << PackingKind << " FakeLParens=";
+  for (unsigned i = 0, e = FakeLParens.size(); i != e; ++i)
+    llvm::errs() << FakeLParens[i] << "/";
+  llvm::errs() << " FakeRParens=" << FakeRParens;
+  llvm::errs() << " II=" << Tok.getIdentifierInfo();
+  llvm::errs() << " Text='" << TokenText << "'\n";
+}
+
 } // namespace format
 } // namespace clang

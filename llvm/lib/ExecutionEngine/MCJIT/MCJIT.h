@@ -67,7 +67,8 @@ private:
 class MCJIT : public ExecutionEngine {
   MCJIT(std::unique_ptr<Module> M, std::unique_ptr<TargetMachine> tm,
         std::shared_ptr<MCJITMemoryManager> MemMgr,
-        std::shared_ptr<LegacyJITSymbolResolver> Resolver);
+        std::shared_ptr<LegacyJITSymbolResolver> Resolver,
+        std::shared_ptr<RuntimeDyld::TLSSymbolResolver> TLSResolver);
 
   typedef llvm::SmallPtrSet<Module *, 4> ModulePtrSet;
 
@@ -180,6 +181,7 @@ class MCJIT : public ExecutionEngine {
   MCContext *Ctx;
   std::shared_ptr<MCJITMemoryManager> MemMgr;
   LinkingSymbolResolver Resolver;
+  std::shared_ptr<RuntimeDyld::TLSSymbolResolver> TLSResolver;
   RuntimeDyld Dyld;
   std::vector<JITEventListener*> EventListeners;
 
@@ -304,6 +306,7 @@ public:
   createJIT(std::unique_ptr<Module> M, std::string *ErrorStr,
             std::shared_ptr<MCJITMemoryManager> MemMgr,
             std::shared_ptr<LegacyJITSymbolResolver> Resolver,
+            std::shared_ptr<RuntimeDyld::TLSSymbolResolver> TLSResolver,
             std::unique_ptr<TargetMachine> TM);
 
   // @}

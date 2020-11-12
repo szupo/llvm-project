@@ -49,6 +49,7 @@ ExecutionEngine *(*ExecutionEngine::MCJITCtor)(
     std::unique_ptr<Module> M, std::string *ErrorStr,
     std::shared_ptr<MCJITMemoryManager> MemMgr,
     std::shared_ptr<LegacyJITSymbolResolver> Resolver,
+    std::shared_ptr<RuntimeDyld::TLSSymbolResolver> TLSResolver,
     std::unique_ptr<TargetMachine> TM) = nullptr;
 
 ExecutionEngine *(*ExecutionEngine::OrcMCJITReplacementCtor)(
@@ -507,6 +508,12 @@ EngineBuilder::setSymbolResolver(std::unique_ptr<LegacyJITSymbolResolver> SR) {
   return *this;
 }
 
+EngineBuilder&
+EngineBuilder::setTLSSymbolResolver(std::unique_ptr<RuntimeDyld::TLSSymbolResolver> SR) {
+  TLSResolver = std::shared_ptr<RuntimeDyld::TLSSymbolResolver>(std::move(SR));
+  return *this;
+}
+
 ExecutionEngine *EngineBuilder::create(TargetMachine *TM) {
   std::unique_ptr<TargetMachine> TheTM(TM); // Take ownership.
 
@@ -545,7 +552,7 @@ ExecutionEngine *EngineBuilder::create(TargetMachine *TM) {
       EE->addModule(std::move(M));
     } else if (ExecutionEngine::MCJITCtor)
       EE = ExecutionEngine::MCJITCtor(std::move(M), ErrorStr, std::move(MemMgr),
-                                      std::move(Resolver), std::move(TheTM));
+                                      std::move(Resolver), std::move(TLSResolver), std::move(TheTM));
 
     if (EE) {
       EE->setVerifyModules(VerifyModules);

@@ -2064,10 +2064,12 @@ struct FormatStyle {
   std::vector<std::string> AlignMemberAccess;
   bool BreakBraceInitializer;
   std::vector<std::string> CustomizeConditionCheckFunctions;
+  bool AlignBuilderCallChain;
 
   bool operator==(const FormatStyle &R) const {
     return AccessModifierOffset == R.AccessModifierOffset &&
            AlignAfterOpenBracket == R.AlignAfterOpenBracket &&
+           AlignBuilderCallChain == R.AlignBuilderCallChain &&
            AlignConsecutiveAssignments == R.AlignConsecutiveAssignments &&
            AlignConsecutiveDeclarations == R.AlignConsecutiveDeclarations &&
            AlignEscapedNewlines == R.AlignEscapedNewlines &&

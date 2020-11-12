@@ -2574,3 +2574,6 @@ The result is:
   A vector of Condition check functions that should be wrapped with compound conditions ``&&``, ``||``
 
   For example: ['CHECK_ERR', 'TestAssert']
+
+**AlignBuilderCallChain** (``bool``)
+  If ``true``, align the indentation of member access to the first one in a builder call chain.

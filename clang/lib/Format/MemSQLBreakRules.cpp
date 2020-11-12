@@ -144,8 +144,7 @@ bool mustBreakBefore(const FormatStyle &Style,
   // Always line break in compound condition ("&&" and "||")
   if (Right.is(tok::r_paren)) {
     const FormatToken* L_Paren = Right.MatchingParen;
-    assert(L_Paren);
-    if (L_Paren->Previous) {
+    if (L_Paren && L_Paren->Previous) {
       const FormatToken* FuncName = L_Paren->Previous;
       std::string token(FuncName->TokenText.data(), FuncName->ColumnWidth);
       if (IsConditionCheck(token, Style.CustomizeConditionCheckFunctions)) {

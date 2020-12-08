@@ -151,12 +151,13 @@ bool mustBreakBefore(const FormatStyle &Style,
     }
   }
 
-  // Always line break in compound condition ("&&" and "||")
+  // Always line break
   if (Right.is(tok::r_paren)) {
     const FormatToken* L_Paren = Right.MatchingParen;
     if (L_Paren && L_Paren->Previous) {
       const FormatToken* FuncName = L_Paren->Previous;
       std::string token(FuncName->TokenText.data(), FuncName->ColumnWidth);
+      // in compound condition ("&&" and "||")
       if (IsConditionCheck(token, Style.CustomizeConditionCheckFunctions)) {
         unsigned int c = CountLogicAndOr(L_Paren, &Right);
         if (c > 1) {
@@ -166,6 +167,18 @@ bool mustBreakBefore(const FormatStyle &Style,
               Token->Next->MustBreakBefore = true;
               Token->Previous->Next->SpacesRequiredBefore = 1;
             }
+          }
+        }
+      }
+
+      if (L_Paren->Next->NewlinesBefore) {
+        for (const FormatToken* Token = L_Paren->Next; Token != &Right; Token = Token->Next) {
+          if (Token->is(tok::l_paren) || Token->is(tok::l_brace) || Token->is(tok::l_square) || Token->is(tok::less)) {
+            // skip inner (), {}, [], <>;
+            Token = Token->MatchingParen;
+          }
+          if (Token->is(tok::comma) && Token->Next) {
+            Token->Next->MustBreakBefore = true;
           }
         }
       }

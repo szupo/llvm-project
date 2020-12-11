@@ -43,7 +43,6 @@ bool mustBreakBefore(const FormatStyle &Style,
                      const AnnotatedLine &Line,
                      const FormatToken &Right) {
   FormatToken *Left = Right.Previous;
-
   if (Left->is(clang::format::TT_CtorInitializerColon)) {
     // Go back to scan parameter list on Ctor to make wrap decision.
     bool ShouldWrapParam = false;
@@ -125,9 +124,18 @@ bool mustBreakBefore(const FormatStyle &Style,
     }
   }
 
-  if (Line.First->TokenText.equals("Auto") && Left->is(tok::semi) &&
-      Line.Level == 0) {
-    return true;
+  if (Line.First->TokenText.equals("Auto")) {
+    if (Line.First->Next->MatchingParen->Previous->isOneOf(tok::semi, tok::r_brace)) {
+      Line.First->Next->MatchingParen->MustBreakBefore = true;
+    }
+
+    if (Left->is(tok::semi) && Line.Level == 0) {
+      return true;
+    }
+
+    if (Left->is(tok::r_brace)) {
+      return true;
+    }
   }
 
   if (Left->is(tok::l_paren) && Line.MustBeDeclaration &&
@@ -172,12 +180,16 @@ bool mustBreakBefore(const FormatStyle &Style,
       }
 
       if (L_Paren->Next->NewlinesBefore) {
-        for (const FormatToken* Token = L_Paren->Next; Token != &Right; Token = Token->Next) {
+        for (const FormatToken* Token = L_Paren->Next; Token && Token != &Right; Token = Token->Next) {
           if (Token->is(tok::l_paren) || Token->is(tok::l_brace) || Token->is(tok::l_square) || Token->is(tok::less)) {
             // skip inner (), {}, [], <>;
-            Token = Token->MatchingParen;
+            // but "<" maybe a legit less than operator, in that case, it has no matching paren.
+            //
+            if (Token->MatchingParen) {
+              Token = Token->MatchingParen;
+            }
           }
-          if (Token->is(tok::comma) && Token->Next) {
+          if (Token && Token->is(tok::comma) && Token->Next) {
             Token->Next->MustBreakBefore = true;
           }
         }

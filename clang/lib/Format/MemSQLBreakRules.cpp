@@ -142,17 +142,14 @@ bool mustBreakBefore(const FormatStyle &Style,
       Line.MightBeFunctionDecl) {
     FormatToken *FuncName = nullptr;
     for (FuncName = Left; FuncName; FuncName = FuncName->Previous) {
-      if (FuncName && FuncName->is(TT_FunctionDeclarationName)) {
-        FuncName->MustBreakBefore = false;
-        for (FormatToken *Search = Left;
-             Search && Search != Left->MatchingParen; Search = Search->Next) {
-          if (Search->is(tok::r_paren) && Search != Left->MatchingParen) {
-            Search->Next->MustBreakBefore = true;
-          }
-        }
+      if (FuncName &&
+          FuncName->is(TT_FunctionDeclarationName) &&
+          FuncName->NestingLevel == Left->NestingLevel) {
         if (Left->ParameterCount > 1) {
           FuncName->MustBreakBefore = true;
           return true;
+        } else {
+          FuncName->MustBreakBefore = false;
         }
         break;
       }

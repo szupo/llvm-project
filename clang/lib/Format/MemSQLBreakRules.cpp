@@ -43,6 +43,7 @@ bool mustBreakBefore(const FormatStyle &Style,
                      const AnnotatedLine &Line,
                      const FormatToken &Right) {
   FormatToken *Left = Right.Previous;
+  DEBUG_WITH_TYPE("memsql3", Left->printDebugToken());
   if (Left->is(clang::format::TT_CtorInitializerColon)) {
     // Go back to scan parameter list on Ctor to make wrap decision.
     bool ShouldWrapParam = false;
@@ -126,7 +127,9 @@ bool mustBreakBefore(const FormatStyle &Style,
 
   if (Line.First->TokenText.equals("Auto")) {
     if (Line.First->Next->MatchingParen->Previous->isOneOf(tok::semi, tok::r_brace)) {
-      Line.First->Next->MatchingParen->MustBreakBefore = true;
+      if (Line.First->Next->MatchingParen->TotalLength >= Style.ColumnLimit) {
+        Line.First->Next->MatchingParen->MustBreakBefore = true;
+      }
     }
 
     if (Left->is(tok::semi) && Line.Level == 0) {

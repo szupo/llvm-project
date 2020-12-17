@@ -305,6 +305,7 @@ CommaSeparatedList::getColumnFormat(unsigned RemainingCharacters) const {
 void FormatToken::printDebugToken() const {
   llvm::errs() << " M=" << MustBreakBefore << " C=" << CanBreakBefore
                << " T=" << getTokenTypeName(this->Type)
+               << " TotalLength=" << TotalLength
                << " S=" << SpacesRequiredBefore
                << " B=" << BlockParameterCount << " BK=" << BlockKind
                << " P=" << SplitPenalty

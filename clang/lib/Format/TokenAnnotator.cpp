@@ -3145,7 +3145,7 @@ bool TokenAnnotator::mustBreakBefore(const AnnotatedLine &Line,
                                      const FormatToken &Right) {
   const FormatToken &Left = *Right.Previous;
 
-  DEBUG_WITH_TYPE("memsql1", Right.printDebugToken());
+  DEBUG_WITH_TYPE("memsql1", Left.printDebugToken());
 
   if (Style.Language == FormatStyle::LK_Cpp) {
     if (Right.is(TT_CtorInitializerComma)) {

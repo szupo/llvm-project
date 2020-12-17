@@ -132,6 +132,10 @@ bool mustBreakBefore(const FormatStyle &Style,
       }
     }
 
+    if (Right.is(tok::l_brace)) {
+      return true;
+    }
+
     if (Left->is(tok::semi) && Line.Level == 0) {
       return true;
     }

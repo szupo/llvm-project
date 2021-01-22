@@ -25,6 +25,9 @@ namespace memsql {
 bool mustBreakBefore(const clang::format::FormatStyle &Style,
                      const clang::format::AnnotatedLine &Line,
                      const clang::format::FormatToken &Right);
+
+void breakbeforeParameters(const clang::format::FormatStyle &Style,
+                           const clang::format::FormatToken *Right);
 }
 
 namespace clang {
@@ -2383,6 +2386,10 @@ void TokenAnnotator::calculateFormattingInformation(AnnotatedLine &Line) {
     Current->IndentLevel = IndentLevel;
     if (Current->opensBlockOrBlockTypeList(Style))
       ++IndentLevel;
+
+    if (Current->is(tok::r_paren)) {
+      memsql::breakbeforeParameters(Style, Current);
+    }
   }
 
   LLVM_DEBUG({ printDebugInfo(Line); });

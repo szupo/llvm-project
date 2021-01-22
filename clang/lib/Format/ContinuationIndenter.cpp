@@ -1436,6 +1436,11 @@ void ContinuationIndenter::moveStatePastScopeOpener(LineState &State,
     if (Style.Language == FormatStyle::LK_JavaScript && EndsInComma)
       BreakBeforeParameter = true;
   }
+
+  if (Current.MatchingParen && Current.MatchingParen->is(tok::l_paren)) {
+    BreakBeforeParameter = State.Stack.back().BreakBeforeParameter;
+  }
+
   // Generally inherit NoLineBreak from the current scope to nested scope.
   // However, don't do this for non-empty nested blocks, dict literals and
   // array literals as these follow different indentation rules.

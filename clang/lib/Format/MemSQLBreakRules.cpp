@@ -39,6 +39,41 @@ static bool IsConditionCheck(const std::string& token,
   return false;
 }
 
+static void LineBreakParameters(const FormatStyle& Style,
+                                const FormatToken* L_Paren) {
+  if (L_Paren->Previous->isOneOf(tok::kw_if, tok::kw_for, tok::kw_while)) {
+    return;
+  }
+  const FormatToken* R_Paren = L_Paren->MatchingParen;
+  if (R_Paren == nullptr) {
+    return;
+  }
+
+  if(!L_Paren->Next->NewlinesBefore) {
+    return;
+  }
+
+  const FormatToken* Token = L_Paren->Next;
+  L_Paren->Next->MustBreakBefore = true;
+  while (Token && Token != R_Paren) {
+    if (Token->isOneOf(tok::l_paren, tok::l_brace, tok::l_square, tok::less)) {
+      if (Token->is(tok::l_paren)) {
+        LineBreakParameters(Style, Token);
+      }
+      // skip inner (), {}, [], <>;
+      // but "<" maybe a legit less than operator, in that case, it has no matching paren.
+      //
+      if (Token->MatchingParen) {
+        Token = Token->MatchingParen;
+      }
+    }
+    if (Token->is(tok::comma) && Token->Next) {
+      Token->Next->MustBreakBefore = true;
+    }
+    Token = Token->Next;
+  }
+}
+
 bool mustBreakBefore(const FormatStyle &Style,
                      const AnnotatedLine &Line,
                      const FormatToken &Right) {
@@ -163,44 +198,44 @@ bool mustBreakBefore(const FormatStyle &Style,
     }
   }
 
-  // Always line break
+
   if (Right.is(tok::r_paren)) {
-    const FormatToken* L_Paren = Right.MatchingParen;
+    const FormatToken* R_Paren = &Right;
+    const FormatToken* L_Paren = R_Paren->MatchingParen;
+
     if (L_Paren && L_Paren->Previous) {
+      if (L_Paren->Next->is(tok::l_square)) {  //Lambda function, always line break;
+        L_Paren->Next->MustBreakBefore = true;
+      }
+
       const FormatToken* FuncName = L_Paren->Previous;
-      std::string token(FuncName->TokenText.data(), FuncName->ColumnWidth);
+      std::string funcName(FuncName->TokenText.data(), FuncName->ColumnWidth);
       // in compound condition ("&&" and "||")
-      if (IsConditionCheck(token, Style.CustomizeConditionCheckFunctions)) {
-        unsigned int c = CountLogicAndOr(L_Paren, &Right);
+      if (IsConditionCheck(funcName, Style.CustomizeConditionCheckFunctions)) {
+        unsigned int c = CountLogicAndOr(L_Paren, R_Paren);
         if (c > 1) {
-          for (const FormatToken* Token = L_Paren; Token != &Right; Token = Token->Next) {
+          for (const FormatToken* Token = L_Paren; Token != R_Paren; Token = Token->Next) {
             if (Token->TokenText.equals("&&") ||
                 Token->TokenText.equals("||")) {
               Token->Next->MustBreakBefore = true;
               Token->Previous->Next->SpacesRequiredBefore = 1;
+              Token->Next->Decision = FD_Break;
             }
-          }
-        }
-      }
-
-      if (L_Paren->Next->NewlinesBefore) {
-        for (const FormatToken* Token = L_Paren->Next; Token && Token != &Right; Token = Token->Next) {
-          if (Token->is(tok::l_paren) || Token->is(tok::l_brace) || Token->is(tok::l_square) || Token->is(tok::less)) {
-            // skip inner (), {}, [], <>;
-            // but "<" maybe a legit less than operator, in that case, it has no matching paren.
-            //
-            if (Token->MatchingParen) {
-              Token = Token->MatchingParen;
-            }
-          }
-          if (Token && Token->is(tok::comma) && Token->Next) {
-            Token->Next->MustBreakBefore = true;
           }
         }
       }
     }
   }
-
   return false;
 }
+
+void breakbeforeParameters(const FormatStyle &Style,
+                         const FormatToken *R_Paren) {
+  const FormatToken* L_Paren = R_Paren->MatchingParen;
+
+  if (L_Paren && L_Paren->Previous) {
+    LineBreakParameters(Style, L_Paren);
+  }
+}
+
 } // namespace memsql

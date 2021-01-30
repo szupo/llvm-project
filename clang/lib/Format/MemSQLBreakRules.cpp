@@ -188,7 +188,7 @@ bool mustBreakBefore(const FormatStyle &Style,
           FuncName->is(TT_FunctionDeclarationName) &&
           FuncName->NestingLevel == Left->NestingLevel) {
         if (Left->ParameterCount > 1) {
-          FuncName->MustBreakBefore = true;
+          FuncName->MustBreakBefore = Style.MemSQLAlwaysBreakAfterReturnType;
           return true;
         } else {
           FuncName->MustBreakBefore = false;

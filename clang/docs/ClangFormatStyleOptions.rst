@@ -2577,3 +2577,6 @@ The result is:
 
 **AlignBuilderCallChain** (``bool``)
   If ``true``, align the indentation of member access to the first one in a builder call chain.
+
+** MemSQLAlwaysBreakAfterReturnType** (`bool``)
+  If ``true``, always line break between return type and function name in function declaration.

@@ -252,6 +252,7 @@ public:
                             ASTFileSignature ExpectedSignature,
                             ASTFileSignatureReader ReadSignature,
                             ModuleFile *&Module,
+                            bool RetryFailedModules,
                             std::string &ErrorStr);
 
   /// Remove the modules starting from First (to the end).

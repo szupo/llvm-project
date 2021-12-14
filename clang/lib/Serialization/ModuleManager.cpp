@@ -107,6 +107,7 @@ ModuleManager::addModule(StringRef FileName, ModuleKind Type,
                          ASTFileSignature ExpectedSignature,
                          ASTFileSignatureReader ReadSignature,
                          ModuleFile *&Module,
+                         bool RetryFailedModules,
                          std::string &ErrorStr) {
   Module = nullptr;
 
@@ -196,7 +197,7 @@ ModuleManager::addModule(StringRef FileName, ModuleKind Type,
     NewModule->Buffer = Buffer;
     // As above, the file descriptor is no longer needed.
     Entry->closeFile();
-  } else if (getModuleCache().shouldBuildPCM(FileName)) {
+  } else if (!RetryFailedModules && getModuleCache().shouldBuildPCM(FileName)) {
     // Report that the module is out of date, since we tried (and failed) to
     // import it earlier.
     Entry->closeFile();

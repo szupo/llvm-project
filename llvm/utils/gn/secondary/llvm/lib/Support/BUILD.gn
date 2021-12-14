@@ -91,7 +91,7 @@ static_library("Support") {
     "LEB128.cpp",
     "LineIterator.cpp",
     "Locale.cpp",
-    "LockFileManager.cpp",
+    "FileLock.cpp",
     "LowLevelType.cpp",
     "MD5.cpp",
     "ManagedStatic.cpp",

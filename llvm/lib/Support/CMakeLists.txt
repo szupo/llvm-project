@@ -163,7 +163,7 @@ add_llvm_component_library(LLVMSupport
   LEB128.cpp
   LineIterator.cpp
   Locale.cpp
-  LockFileManager.cpp
+  FileLock.cpp
   LowLevelType.cpp
   ManagedStatic.cpp
   MathExtras.cpp

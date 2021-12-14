@@ -26,7 +26,7 @@
 #include "llvm/Support/DJB.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FileUtilities.h"
-#include "llvm/Support/LockFileManager.h"
+#include "llvm/Support/FileLock.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/OnDiskHashTable.h"
 #include "llvm/Support/Path.h"
@@ -858,16 +858,8 @@ GlobalModuleIndex::writeIndex(FileManager &FileMgr,
 
   // Coordinate building the global index file with other processes that might
   // try to do the same.
-  llvm::LockFileManager Locked(IndexPath);
-  switch (Locked) {
-  case llvm::LockFileManager::LFS_Error:
-    return llvm::createStringError(std::errc::io_error, "LFS error");
-
-  case llvm::LockFileManager::LFS_Owned:
-    // We're responsible for building the index ourselves. Do so below.
-    break;
-
-  case llvm::LockFileManager::LFS_Shared:
+  llvm::FileLock Lock(IndexPath);
+  if (!Lock.TryLock()) {
     // Someone else is responsible for building the index. We don't care
     // when they finish, so we're done.
     return llvm::createStringError(std::errc::device_or_resource_busy,
@@ -882,17 +874,19 @@ GlobalModuleIndex::writeIndex(FileManager &FileMgr,
   for (llvm::sys::fs::directory_iterator D(Path, EC), DEnd;
        D != DEnd && !EC;
        D.increment(EC)) {
+
     // If this isn't a module file, we don't care.
     if (llvm::sys::path::extension(D->path()) != ".pcm") {
-      // ... unless it's a .pcm.lock file, which indicates that someone is
+      // ... unless it's a .pcm.tmp file, which indicates that someone is
       // in the process of rebuilding a module. They'll rebuild the index
       // at the end of that translation unit, so we don't have to.
-      if (llvm::sys::path::extension(D->path()) == ".pcm.lock")
+      if (llvm::sys::path::extension(D->path()) == ".pcm.tmp")
         return llvm::createStringError(std::errc::device_or_resource_busy,
                                        "someone else is building the index");
 
       continue;
     }
+
 
     // If we can't find the module file, skip it.
     auto ModuleFile = FileMgr.getFile(D->path());

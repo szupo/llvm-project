@@ -42,7 +42,7 @@
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
-#include "llvm/Support/LockFileManager.h"
+#include "llvm/Support/FileLock.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
@@ -1292,7 +1292,7 @@ static bool compileModule(CompilerInstance &ImportingInstance,
 static bool compileModuleAndReadAST(CompilerInstance &ImportingInstance,
                                     SourceLocation ImportLoc,
                                     SourceLocation ModuleNameLoc,
-                                    Module *Module, StringRef ModuleFileName) {
+                                    Module *Module, StringRef ModuleFileName, bool WasOutOfDate) {
   DiagnosticsEngine &Diags = ImportingInstance.getDiagnostics();
 
   auto diagnoseBuildFailure = [&] {
@@ -1300,79 +1300,68 @@ static bool compileModuleAndReadAST(CompilerInstance &ImportingInstance,
         << Module->Name << SourceRange(ImportLoc, ModuleNameLoc);
   };
 
-  // FIXME: have LockFileManager return an error_code so that we can
+  // FIXME: have FileLock return an error_code so that we can
   // avoid the mkdir when the directory already exists.
   StringRef Dir = llvm::sys::path::parent_path(ModuleFileName);
   llvm::sys::fs::create_directories(Dir);
 
-  while (1) {
-    unsigned ModuleLoadCapabilities = ASTReader::ARR_Missing;
-    llvm::LockFileManager Locked(ModuleFileName);
-    switch (Locked) {
-    case llvm::LockFileManager::LFS_Error:
-      // ModuleCache takes care of correctness and locks are only necessary for
-      // performance. Fallback to building the module in case of any lock
-      // related errors.
-      Diags.Report(ModuleNameLoc, diag::remark_module_lock_failure)
-          << Module->Name << Locked.getErrorMessage();
-      // Clear out any potential leftover.
-      Locked.unsafeRemoveLockFile();
-      LLVM_FALLTHROUGH;
-    case llvm::LockFileManager::LFS_Owned:
-      // We're responsible for building the module ourselves.
-      if (!compileModule(ImportingInstance, ModuleNameLoc, Module,
-                         ModuleFileName)) {
-        diagnoseBuildFailure();
-        return false;
-      }
-      break;
+  {
+    llvm::FileLock Lock(ModuleFileName);
 
-    case llvm::LockFileManager::LFS_Shared:
     {
       llvm::TimeTraceScope TimeScope("ModuleLockWait", ModuleFileName);
-      // Someone else is responsible for building the module. Wait for them to
-      // finish.
-      switch (Locked.waitForUnlock()) {
-      case llvm::LockFileManager::Res_Success:
-        ModuleLoadCapabilities |= ASTReader::ARR_OutOfDate;
-        break;
-      case llvm::LockFileManager::Res_OwnerDied:
-        continue; // try again to get the lock.
-      case llvm::LockFileManager::Res_Timeout:
-        // Since ModuleCache takes care of correctness, we try waiting for
-        // another process to complete the build so clang does not do it done
-        // twice. If case of timeout, build it ourselves.
-        Diags.Report(ModuleNameLoc, diag::remark_module_lock_timeout)
-            << Module->Name;
-        // Clear the lock file so that future invocations can make progress.
-        Locked.unsafeRemoveLockFile();
-        continue;
+      Lock.Lock();
+    }
+
+    bool rebuiltConcurrently = false;
+    FileManager& FileCache = ImportingInstance.getFileManager();
+
+    llvm::vfs::Status NewStatus;
+    std::error_code StatError = FileCache.getNoncachedStatValue(ModuleFileName, NewStatus);
+    if (!StatError)
+    {
+      if (WasOutOfDate)
+      {
+        // Any new version of this .pcm must have a different unique id (i.e. inode), even if inodes are being
+        // reused (we block that at the time of this writing), because compileModule() writes the new version
+        // to a separate file before rename()-ing it to replace the old version.
+        //
+        auto FileOrErr = FileCache.getFile(ModuleFileName, /*openFile=*/false, /*CacheFailure=*/false);
+        assert(FileOrErr && "No one should be deleting a .pcm which was already confirmed to exist.");
+
+        rebuiltConcurrently = NewStatus.getUniqueID() != (*FileOrErr)->getUniqueID();
       }
-      break;
-    }
-    }
+      else
+      {
+        // !WasOutOfDate means it was missing. Now it exists.
+        //
+        rebuiltConcurrently = true;
+      }
 
-    // Try to read the module file, now that we've compiled it.
-    ASTReader::ASTReadResult ReadResult =
-        ImportingInstance.getASTReader()->ReadAST(
-            ModuleFileName, serialization::MK_ImplicitModule, ImportLoc,
-            ModuleLoadCapabilities);
-
-    if (ReadResult == ASTReader::OutOfDate &&
-        Locked == llvm::LockFileManager::LFS_Shared) {
-      // The module may be out of date in the presence of file system races,
-      // or if one of its imports depends on header search paths that are not
-      // consistent with this ImportingInstance.  Try again...
-      continue;
-    } else if (ReadResult == ASTReader::Missing) {
-      diagnoseBuildFailure();
-    } else if (ReadResult != ASTReader::Success &&
-               !Diags.hasErrorOccurred()) {
-      // The ASTReader didn't diagnose the error, so conservatively report it.
-      diagnoseBuildFailure();
     }
-    return ReadResult == ASTReader::Success;
+    else
+      assert(!WasOutOfDate && "No one should be deleting a .pcm which was already confirmed to exist.");
+
+    if (!rebuiltConcurrently &&
+        !compileModule(ImportingInstance, ModuleNameLoc, Module,
+                       ModuleFileName)) {
+      diagnoseBuildFailure();
+      return false;
+    }
   }
+
+  // We've dropped the lock, but nothing should trigger building the same module twice in a single build
+  // session. That would be an error worth diagnosing.
+  //
+  if(ImportingInstance.getASTReader()->ReadAST(ModuleFileName,
+                                               serialization::MK_ImplicitModule,
+                                               ImportLoc,
+                                               ASTReader::ARR_None)
+     == ASTReader::Success)
+    return true;
+
+  diagnoseBuildFailure();
+  return false;
 }
 
 /// Diagnose differences between the current definition of the given
@@ -1748,6 +1737,7 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
   llvm::TimeRegion TimeLoading(FrontendTimerGroup ? &Timer : nullptr);
   llvm::TimeTraceScope TimeScope("Module Load", ModuleName);
 
+  bool WasOutOfDate = false;
   // Try to load the module file. If we are not trying to load from the
   // module cache, we don't know how to rebuild modules.
   unsigned ARRFlags = Source == MS_ModuleCache
@@ -1784,9 +1774,11 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
     return ModuleLoadResult();
   }
 
+  // The most interesting case.
   case ASTReader::OutOfDate:
+    WasOutOfDate = true;
+    LLVM_FALLTHROUGH;
   case ASTReader::Missing:
-    // The most interesting case.
     break;
 
   case ASTReader::ConfigurationMismatch:
@@ -1853,7 +1845,7 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
 
   // Try to compile and then read the AST.
   if (!compileModuleAndReadAST(*this, ImportLoc, ModuleNameLoc, M,
-                               ModuleFilename)) {
+                               ModuleFilename, WasOutOfDate)) {
     assert(getDiagnostics().hasErrorOccurred() &&
            "undiagnosed error in compileModuleAndReadAST");
     if (getPreprocessorOpts().FailedModules)

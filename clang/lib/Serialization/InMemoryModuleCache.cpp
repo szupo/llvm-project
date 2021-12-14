@@ -24,8 +24,7 @@ InMemoryModuleCache::getPCMState(llvm::StringRef Filename) const {
 llvm::MemoryBuffer &
 InMemoryModuleCache::addPCM(llvm::StringRef Filename,
                             std::unique_ptr<llvm::MemoryBuffer> Buffer) {
-  auto Insertion = PCMs.insert(std::make_pair(Filename, std::move(Buffer)));
-  assert(Insertion.second && "Already has a PCM");
+  auto Insertion = PCMs.insert_or_assign(Filename, std::move(Buffer));
   return *Insertion.first->second.Buffer;
 }
 
@@ -61,7 +60,7 @@ bool InMemoryModuleCache::tryToDropPCM(llvm::StringRef Filename) {
   assert(I != PCMs.end() && "PCM to remove is unknown...");
 
   auto &PCM = I->second;
-  assert(PCM.Buffer && "PCM to remove is scheduled to be built...");
+  // assert(PCM.Buffer && "PCM to remove is scheduled to be built...");
 
   if (PCM.IsFinal)
     return true;

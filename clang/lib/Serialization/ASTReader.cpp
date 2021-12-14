@@ -4516,7 +4516,7 @@ ASTReader::ReadASTCore(StringRef FileName,
     = ModuleMgr.addModule(FileName, Type, ImportLoc, ImportedBy,
                           getGeneration(), ExpectedSize, ExpectedModTime,
                           ExpectedSignature, readASTFileSignature,
-                          M, ErrorStr);
+                          M, ClientLoadCapabilities == 0, ErrorStr);
 
   switch (AddResult) {
   case ModuleManager::AlreadyLoaded:

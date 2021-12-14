@@ -4547,6 +4547,11 @@ ASTReader::ReadASTCore(StringRef FileName,
     if (ClientLoadCapabilities & ARR_OutOfDate)
       return OutOfDate;
 
+    assert(Type != MK_ImplicitModule &&
+           "Implicit module appears out of date in a context where it "
+           "should be guaranteed up to date, e.g. when we know we or"
+           "someone else just rebuilt it.");
+
     // Otherwise, return an error.
     Diag(diag::err_ast_file_out_of_date)
         << moduleKindForDiagnostic(Type) << FileName << !ErrorStr.empty()

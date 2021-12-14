@@ -726,6 +726,21 @@ void CompilerInstance::clearOutputFiles(bool EraseFiles) {
     SmallString<128> NewOutFile(OF.Filename);
     FileMgr->FixupRelativePath(NewOutFile);
 
+    if (llvm::sys::fs::exists(NewOutFile)) {
+        if(std::error_code ec =
+           llvm::sys::fs::remove(NewOutFile + ".old", /*ignoreNonExisting=*/true)) {
+            getDiagnostics().Report(diag::err_unable_to_make_temp)
+                << ec.message();
+        }
+
+
+        if(std::error_code ec =
+           llvm::sys::fs::create_hard_link(NewOutFile, NewOutFile + ".old")) {
+            getDiagnostics().Report(diag::err_unable_to_make_temp)
+                << ec.message();
+        }
+    }
+
     llvm::Error E = OF.File->keep(NewOutFile);
     if (!E)
       continue;

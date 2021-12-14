@@ -1158,11 +1158,14 @@ compileModuleImpl(CompilerInstance &ImportingInstance, SourceLocation ImportLoc,
 
   PreBuildStep(Instance);
 
+  llvm::TimeTraceProfiler *Profiler = llvm::getTimeTraceProfilerInstance();
+
   // Execute the action to actually build the module in-place. Use a separate
   // thread so that we get a stack large enough.
   llvm::CrashRecoveryContext CRC;
   CRC.RunSafelyOnThread(
       [&]() {
+        llvm::TimeTraceChildThreadProfiler ChildProfiler(Profiler);
         GenerateModuleFromModuleMapAction Action;
         Instance.ExecuteAction(Action);
       },
@@ -1310,6 +1313,8 @@ static bool compileModuleAndReadAST(CompilerInstance &ImportingInstance,
       break;
 
     case llvm::LockFileManager::LFS_Shared:
+    {
+      llvm::TimeTraceScope TimeScope("ModuleLockWait", ModuleFileName);
       // Someone else is responsible for building the module. Wait for them to
       // finish.
       switch (Locked.waitForUnlock()) {
@@ -1329,6 +1334,7 @@ static bool compileModuleAndReadAST(CompilerInstance &ImportingInstance,
         continue;
       }
       break;
+    }
     }
 
     // Try to read the module file, now that we've compiled it.

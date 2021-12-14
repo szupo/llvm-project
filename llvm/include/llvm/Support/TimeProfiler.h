@@ -88,6 +88,21 @@ struct TimeTraceScope {
   }
 };
 
+class TimeTraceChildThreadProfiler {
+public:
+  TimeTraceChildThreadProfiler(TimeTraceProfiler* ParentThreadProfiler);
+  ~TimeTraceChildThreadProfiler();
+
+  TimeTraceChildThreadProfiler() = delete;
+  TimeTraceChildThreadProfiler(const TimeTraceChildThreadProfiler &) = delete;
+  TimeTraceChildThreadProfiler &operator=(const TimeTraceChildThreadProfiler &) = delete;
+  TimeTraceChildThreadProfiler(TimeTraceChildThreadProfiler &&) = delete;
+  TimeTraceChildThreadProfiler &operator=(TimeTraceChildThreadProfiler &&) = delete;
+
+private:
+  bool Enabled;
+};
+
 } // end namespace llvm
 
 #endif

@@ -328,3 +328,17 @@ void llvm::timeTraceProfilerEnd() {
   if (TimeTraceProfilerInstance != nullptr)
     TimeTraceProfilerInstance->end();
 }
+
+TimeTraceChildThreadProfiler::TimeTraceChildThreadProfiler(TimeTraceProfiler* ParentThreadProfiler)
+  : Enabled(ParentThreadProfiler != nullptr)
+{
+  if (Enabled)
+    timeTraceProfilerInitialize(ParentThreadProfiler->TimeTraceGranularity,
+                                ParentThreadProfiler->ProcName);
+}
+
+TimeTraceChildThreadProfiler::~TimeTraceChildThreadProfiler()
+{
+  if (Enabled)
+    timeTraceProfilerFinishThread();
+}

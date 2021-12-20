@@ -643,10 +643,20 @@ bool FrontendAction::BeginSourceFile(CompilerInstance &CI,
     // FIXME: What if the input is a memory buffer?
     StringRef InputFile = Input.getFile();
 
+    Optional<DependencyFileGenerator> DepFileGenerator;
+    const DependencyOutputOptions &DepOpts = CI.getDependencyOutputOpts();
+    if (!DepOpts.OutputFile.empty())
+      DepFileGenerator = DependencyFileGenerator(DepOpts);
+
     std::unique_ptr<ASTUnit> AST = ASTUnit::LoadFromASTFile(
         std::string(InputFile), CI.getPCHContainerReader(),
         ASTUnit::LoadEverything, Diags, CI.getFileSystemOpts(),
-        CI.getCodeGenOpts().DebugTypeExtRefs);
+        CI.getCodeGenOpts().DebugTypeExtRefs,
+        /*OnlyLocalDecls*/false,
+        /*CaptureDiagnostics*/CaptureDiagsKind::None,
+        /*AllowASTWithCompilerErrors*/false,
+        /*UserFilesAreVolatile*/false,
+        /*DependencyCollector*/DepFileGenerator.hasValue() ? DepFileGenerator.getPointer() : nullptr);
 
     if (!AST)
       goto failure;
@@ -666,6 +676,10 @@ bool FrontendAction::BeginSourceFile(CompilerInstance &CI,
     CI.setASTContext(&AST->getASTContext());
 
     setCurrentInput(Input, std::move(AST));
+
+    // We collected all dep file metadata in LoadFromASTFile. Generate the file now.
+    if (DepFileGenerator)
+      DepFileGenerator->finishedMainFile(*Diags);
 
     // Initialize the action.
     if (!BeginSourceFileAction(CI))

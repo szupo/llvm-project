@@ -5380,8 +5380,10 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   // Add preprocessing options like -I, -D, etc. if we are using the
   // preprocessor.
   //
+  // FIXME: should probably break out depfile options separately - other preprocessing options indeed look
+  // irrelevant.
   // FIXME: Support -fpreprocessed
-  if (types::getPreprocessedType(InputType) != types::TY_INVALID)
+  if (types::getPreprocessedType(InputType) != types::TY_INVALID || Input.getType() == types::TY_ModuleFile)
     AddPreprocessingOptions(C, JA, D, Args, CmdArgs, Output, Inputs);
 
   // Don't warn about "clang -c -DPIC -fPIC test.i" because libtool.m4 assumes

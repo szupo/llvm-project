@@ -759,7 +759,8 @@ std::unique_ptr<ASTUnit> ASTUnit::LoadFromASTFile(
     WhatToLoad ToLoad, IntrusiveRefCntPtr<DiagnosticsEngine> Diags,
     const FileSystemOptions &FileSystemOpts, bool UseDebugInfo,
     bool OnlyLocalDecls, CaptureDiagsKind CaptureDiagnostics,
-    bool AllowASTWithCompilerErrors, bool UserFilesAreVolatile) {
+    bool AllowASTWithCompilerErrors, bool UserFilesAreVolatile,
+    DependencyCollector* DepCollector) {
   std::unique_ptr<ASTUnit> AST(new ASTUnit(true));
 
   // Recover resources if we crash before exiting this method.
@@ -822,6 +823,12 @@ std::unique_ptr<ASTUnit> ASTUnit::LoadFromASTFile(
   AST->Reader->setListener(std::make_unique<ASTInfoCollector>(
       *AST->PP, AST->Ctx.get(), *AST->HSOpts, *AST->PPOpts, *AST->LangOpts,
       AST->TargetOpts, AST->Target, Counter));
+
+  // Chain DepCollector on top of ASTInfoCollector, if the caller wants dependency information.  UNDONE: since
+  // dep information comes directly from module metadata in ReadAST, we could use ListenerScope to avoid
+  // pointless callbacks after ReadAST finishes. But it'd need a change to the DepCollector interface.
+  if (DepCollector)
+    DepCollector->attachToASTReader(*AST->Reader);
 
   // Attach the AST reader to the AST context as an external AST
   // source, so that declarations will be deserialized from the

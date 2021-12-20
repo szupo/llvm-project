@@ -28,6 +28,7 @@
 #include "clang/Sema/CodeCompleteConsumer.h"
 #include "clang/Serialization/ASTBitCodes.h"
 #include "clang/Frontend/PrecompiledPreamble.h"
+#include "clang/Frontend/Utils.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
@@ -696,7 +697,8 @@ public:
                   bool UseDebugInfo = false, bool OnlyLocalDecls = false,
                   CaptureDiagsKind CaptureDiagnostics = CaptureDiagsKind::None,
                   bool AllowASTWithCompilerErrors = false,
-                  bool UserFilesAreVolatile = false);
+                  bool UserFilesAreVolatile = false,
+                  DependencyCollector* DepCollector = nullptr);
 
 private:
   /// Helper function for \c LoadFromCompilerInvocation() and

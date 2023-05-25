@@ -3300,8 +3300,7 @@ static void ParseLangArgs(LangOptions &Opts, ArgList &Args, InputKind IK,
   Opts.CompleteMemberPointers = Args.hasArg(OPT_fcomplete_member_pointers);
   Opts.BuildingPCHWithObjectFile = Args.hasArg(OPT_building_pch_with_obj);
 
-  Opts.CheckNew =
-      Args.hasFlag(OPT_fcheck_new_f, OPT_fcheck_new_fno, false);
+  Opts.CheckNew = Args.hasArg(OPT_fcheck_new);
 }
 
 static bool isStrictlyPreprocessorAction(frontend::ActionKind Action) {

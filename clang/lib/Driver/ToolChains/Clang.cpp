@@ -6004,8 +6004,8 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-fno-assume-sane-operator-new");
 
   // -fcheck-new is off by default.
-  if (!Args.hasFlag(options::OPT_fcheck_new_f,
-                    options::OPT_fcheck_new_fno, false))
+  if (Args.hasFlag(options::OPT_fcheck_new,
+                   options::OPT_fno_check_new, false))
     CmdArgs.push_back("-fcheck-new");
 
   // -fblocks=0 is default.
@@ -6278,8 +6278,8 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-fno-assume-sane-operator-new");
 
   // -fcheck-new is off by default.
-  if (!Args.hasFlag(options::OPT_fcheck_new_f,
-                    options::OPT_fcheck_new_fno, false))
+  if (Args.hasFlag(options::OPT_fcheck_new,
+                   options::OPT_fno_check_new, false))
     CmdArgs.push_back("-fcheck-new");
 
   // -frelaxed-template-template-args is off by default, as it is a severe

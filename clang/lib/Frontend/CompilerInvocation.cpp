@@ -4046,9 +4046,6 @@ bool CompilerInvocation::ParseLangArgs(LangOptions &Opts, ArgList &Args,
         {std::string(Split.first), std::string(Split.second)});
   }
 
-  Opts.CheckNew =
-      Args.hasFlag(OPT_fcheck_new_f, OPT_fcheck_new_fno, false);
-
   return Diags.getNumErrors() == NumErrorsBefore;
 }
 
